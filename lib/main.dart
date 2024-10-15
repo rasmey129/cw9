@@ -79,6 +79,7 @@ class MyHomePage extends StatelessWidget {
               child: const Text('Query by ID'),
             ),
             const SizedBox(height: 10),
+            ElevatedButton(onPressed: _deleteAll, child: const Text('Delete all'))
             
           ],
         ),
@@ -129,5 +130,10 @@ class MyHomePage extends StatelessWidget {
     } else {
       debugPrint('No record found with ID: $id');
     }
+  }
+
+  void _deleteAll() async {
+    final rowsDeleted = await dbHelper.deleteAll();
+    debugPrint('Deleted $rowsDeleted rows from the table');
   }
 }

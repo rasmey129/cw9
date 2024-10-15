@@ -81,4 +81,8 @@ class DatabaseHelper {
     );
     return result.isNotEmpty ? result.first : null;
   }
+
+  Future<int> deleteAll() async {
+    return await _db.delete(table);
+  }
 }
