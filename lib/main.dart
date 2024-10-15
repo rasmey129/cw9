@@ -1,75 +1,105 @@
-import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/material.dart';
+import 'database_helper.dart';
 
-class DatabaseHelper {
-  static const _databaseName = "MyDatabase.db";
-  static const _databaseVersion = 1;
+// Here we are using a global variable. You can use
+// something like get_it in a production app.
+final dbHelper = DatabaseHelper();
 
-  static const table = 'my_table';
-  static const columnId = '_id';
-  static const columnName = 'name';
-  static const columnAge = 'age';
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Initialize the database
+  await dbHelper.init();
+  runApp(const MyApp());
+}
 
-  late Database _db;
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
-  // This opens the database (and creates it if it doesn't exist)
-  Future<void> init() async {
-    final documentsDirectory = await getApplicationDocumentsDirectory();
-    final path = join(documentsDirectory.path, _databaseName);
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'SQFlite Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: const MyHomePage(),
+    );
+  }
+}
 
-    _db = await openDatabase(
-      path,
-      version: _databaseVersion,
-      onCreate: _onCreate,
+class MyHomePage extends StatelessWidget {
+  const MyHomePage({super.key});
+
+  // Homepage layout
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('sqflite'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            ElevatedButton(
+              onPressed: _insert,
+              child: const Text('insert'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _query,
+              child: const Text('query'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _update,
+              child: const Text('update'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _delete,
+              child: const Text('delete'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  // SQL code to create the database table
-  Future _onCreate(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE $table (
-        $columnId INTEGER PRIMARY KEY,
-        $columnName TEXT NOT NULL,
-        $columnAge INTEGER NOT NULL
-      )
-    ''');
+  // Button onPressed methods
+  void _insert() async {
+    // Row to insert
+    Map<String, dynamic> row = {
+      DatabaseHelper.columnName: 'Bob',
+      DatabaseHelper.columnAge: 23
+    };
+    final id = await dbHelper.insert(row);
+    debugPrint('inserted row id: $id');
   }
 
-  // Inserts a row in the database where each key in the Map is a column name
-  // and the value is the column value. The return value is the id of the inserted row.
-  Future<int> insert(Map<String, dynamic> row) async {
-    return await _db.insert(table, row);
+  void _query() async {
+    final allRows = await dbHelper.queryAllRows();
+    debugPrint('query all rows:');
+    for (final row in allRows) {
+      debugPrint(row.toString());
+    }
   }
 
-  // All of the rows are returned as a list of maps, where each map is a key-value list of columns.
-  Future<List<Map<String, dynamic>>> queryAllRows() async {
-    return await _db.query(table);
+  void _update() async {
+    // Row to update
+    Map<String, dynamic> row = {
+      DatabaseHelper.columnId: 1,
+      DatabaseHelper.columnName: 'Mary',
+      DatabaseHelper.columnAge: 32
+    };
+    final rowsAffected = await dbHelper.update(row);
+    debugPrint('updated $rowsAffected row(s)');
   }
 
-  // This method uses a raw query to give the row count.
-  Future<int> queryRowCount() async {
-    final results = await _db.rawQuery('SELECT COUNT(*) FROM $table');
-    return Sqflite.firstIntValue(results) ?? 0;
-  }
-
-  // Updates the row, assuming that the id column in the map is set.
-  Future<int> update(Map<String, dynamic> row) async {
-    int id = row[columnId];
-    return await _db.update(
-      table,
-      row,
-      where: '$columnId = ?',
-      whereArgs: [id],
-    );
-  }
-
-  // Deletes the row specified by the id. The number of affected rows is returned.
-  Future<int> delete(int id) async {
-    return await _db.delete(
-      table,
-      where: '$columnId = ?',
-      whereArgs: [id],
-    );
+  void _delete() async {
+    // Assuming that the number of rows is the id for the last row.
+    final id = await dbHelper.queryRowCount();
+    final rowsDeleted = await dbHelper.delete(id);
+    debugPrint('deleted $rowsDeleted row(s): row $id');
   }
 }
