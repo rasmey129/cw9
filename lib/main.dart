@@ -4,6 +4,7 @@ import 'database_helper.dart';
 // Here we are using a global variable. You can use
 // something like get_it in a production app.
 final dbHelper = DatabaseHelper();
+final TextEditingController _idController = TextEditingController();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +15,7 @@ Future<void> main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+  
 
   @override
   Widget build(BuildContext context) {
@@ -60,15 +62,32 @@ class MyHomePage extends StatelessWidget {
               onPressed: _delete,
               child: const Text('delete'),
             ),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: _idController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Enter ID',
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: _queryById,
+              child: const Text('Query by ID'),
+            ),
+            const SizedBox(height: 10),
+            
           ],
         ),
       ),
     );
   }
 
-  // Button onPressed methods
+  // Existing methods
   void _insert() async {
-    // Row to insert
     Map<String, dynamic> row = {
       DatabaseHelper.columnName: 'Bob',
       DatabaseHelper.columnAge: 23
@@ -86,7 +105,6 @@ class MyHomePage extends StatelessWidget {
   }
 
   void _update() async {
-    // Row to update
     Map<String, dynamic> row = {
       DatabaseHelper.columnId: 1,
       DatabaseHelper.columnName: 'Mary',
@@ -97,9 +115,19 @@ class MyHomePage extends StatelessWidget {
   }
 
   void _delete() async {
-    // Assuming that the number of rows is the id for the last row.
     final id = await dbHelper.queryRowCount();
     final rowsDeleted = await dbHelper.delete(id);
     debugPrint('deleted $rowsDeleted row(s): row $id');
+  }
+
+  // Query a specific record by ID
+  void _queryById() async {
+    int id = int.parse(_idController.text); 
+    final row = await dbHelper.queryById(id);
+    if (row != null) {
+      debugPrint('Record found: $row');
+    } else {
+      debugPrint('No record found with ID: $id');
+    }
   }
 }

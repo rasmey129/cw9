@@ -72,4 +72,13 @@ class DatabaseHelper {
       whereArgs: [id],
     );
   }
+
+  Future<Map<String, dynamic>?> queryById(int id) async {
+    final result = await _db.query(
+      table,
+      where: '$columnId = ?',
+      whereArgs: [id],
+    );
+    return result.isNotEmpty ? result.first : null;
+  }
 }
